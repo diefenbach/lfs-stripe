@@ -11,6 +11,18 @@ class StripeCheckoutHandler {
     }
 
     initialize() {
+        const style = {
+            base: {
+              fontSize: '16px',
+              color: '#495057',
+              lineHeight: '1.5',
+              '::placeholder': {
+                color: '#6c757d',
+              },
+              backgroundColor: '#fff',
+            },
+        };        
+
         // Only initialize if we have a credit card form
         this.creditCardForm = document.querySelector('.creditcard-form');
         if (!this.creditCardForm) {
@@ -20,9 +32,12 @@ class StripeCheckoutHandler {
         this.stripe = Stripe('pk_test_51RTKpW6d4o9XkCFXTgKjU8BQUQ6pkA8FH5y4BGmgnejBn5hQEHU8JK0g8ikkIjxxwHK3N9xKV7dWLHJDAnQKPgkn00z5BISmCm');
         this.elements = this.stripe.elements();
 
-        this.cardNumberElement = this.elements.create('cardNumber');
-        this.cardExpiryElement = this.elements.create('cardExpiry');
-        this.cardCvcElement = this.elements.create('cardCvc');
+        this.cardNumberElement = this.elements.create('cardNumber', {
+            style: style,
+            disableLink: true
+        });
+        this.cardExpiryElement = this.elements.create('cardExpiry', {style});
+        this.cardCvcElement = this.elements.create('cardCvc', {style});
 
         this.cardNumberElement.mount('#card-number-element');
         this.cardExpiryElement.mount('#card-expiry-element');

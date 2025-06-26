@@ -1,0 +1,58 @@
+import logging
+
+from django.conf import settings
+from django.http import HttpResponseRedirect, JsonResponse
+from django.urls import reverse
+import stripe
+
+import lfs.core.utils
+from lfs.cart.utils import get_cart
+from lfs.core.signals import order_paid, order_submitted
+from lfs.order.settings import PAID
+from lfs.order.utils import add_order
+
+logger = logging.getLogger("lfs.paypal")
+
+
+def create_payment_intent(request):
+    cart = lfs.cart.utils.get_cart(request)
+    if cart is None:
+        return HttpResponseRedirect(reverse("lfs_cart"))
+
+    # Set Stripe API key
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    try:
+        # Get cart and total amount
+        cart = get_cart(request)
+
+        # Convert to cents
+        amount = cart.get_price_gross(request) * 100
+
+        # Create payment intent
+        intent = stripe.PaymentIntent.create(
+            amount=int(amount),
+            currency="eur",
+            payment_method_types=["card"],
+            metadata={"cart_id": cart.id, "user_id": request.user.id if request.user.is_authenticated else None},
+        )
+
+        return JsonResponse({"clientSecret": intent.client_secret})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+
+def create_order(request):
+    cart = get_cart(request)
+    logger.info(f"Creating order for payment {cart.id}")
+    order = add_order(request)
+    logger.info(f"Order created: {order.id}")
+    order.state = PAID
+    order.save()
+
+    # Notify the system
+    order_submitted.send(sender=order, request=request)
+    order_paid.send(sender=order, request=request)
+
+    return JsonResponse({"message": "Payment confirmed"})

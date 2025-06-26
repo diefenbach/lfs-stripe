@@ -43,12 +43,29 @@ class StripeCheckoutHandler {
         this.cardExpiryElement.mount('#card-expiry-element');
         this.cardCvcElement.mount('#card-cvc-element');
 
-        // Error handling für alle Elemente
+        // Error handling stripe elements
         [this.cardNumberElement, this.cardExpiryElement, this.cardCvcElement].forEach(element => {
             element.on('change', ({error}) => {
                 this.displayError(error ? error.message : '');
             });
         });
+
+        // Error handling cardholder name (which is not a stripe element)
+        const cardholderNameInput = this.creditCardForm.querySelector('input[name="cardholder_name"]');
+        if (cardholderNameInput) {
+            cardholderNameInput.addEventListener('blur', (event) => {
+                if (!event.target.value.trim()) {
+                    this.displayError('Bitte geben Sie den Namen des Karteninhabers ein.');
+                } else {
+                    this.displayError('');
+                }
+            });
+            
+            // Clear error when user starts typing
+            cardholderNameInput.addEventListener('input', () => {
+                this.displayError('');
+            });
+        }
 
         // Form submit
         this.creditCardForm.addEventListener('submit', (event) => this.handleFormSubmit(event));
@@ -56,7 +73,8 @@ class StripeCheckoutHandler {
 
     async handleFormSubmit(event) {
         event.preventDefault();
-                            
+
+        
         // Get form data to send to the backend
         const formData = new FormData(this.creditCardForm);
     
@@ -67,6 +85,13 @@ class StripeCheckoutHandler {
         try {
             // Payment Intent vom Backend holen
             const clientSecret = await this.createPaymentIntent(formData, csrfToken);
+
+            // Validate cardholder name before submission
+            const cardholderName = this.creditCardForm.querySelector('input[name="cardholder_name"]').value.trim();
+            if (!cardholderName) {
+                this.displayError('Bitte geben Sie den Namen des Karteninhabers ein.');
+                return;
+            }
             
             if (clientSecret) {
                 const paymentResult = await this.confirmPayment(clientSecret);

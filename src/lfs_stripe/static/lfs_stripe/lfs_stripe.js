@@ -51,7 +51,7 @@ class StripeCheckoutHandler {
         });
 
         // Error handling cardholder name (which is not a stripe element)
-        const cardholderNameInput = this.creditCardForm.querySelector('input[name="cardholder_name"]');
+        const cardholderNameInput = document.querySelector('input[name="cardholder_name"]');
         if (cardholderNameInput) {
             cardholderNameInput.addEventListener('blur', (event) => {
                 if (!event.target.value.trim()) {
@@ -74,7 +74,21 @@ class StripeCheckoutHandler {
     async handleFormSubmit(event) {
         event.preventDefault();
 
-        
+        const valid_customer = document.querySelector('#id_valid_customer')
+        if (!valid_customer.checked) {
+            // Display error message for unchecked terms
+            const errorElement = document.createElement('div');
+            errorElement.className = 'age-error text-danger mb-2';
+            errorElement.textContent = 'Bitte bestätigen sie dieses Feld.';
+            
+            // Insert the error message before the checkbox
+            const existingError = valid_customer.parentElement.querySelector('.age-error');
+            if (!existingError) {
+                valid_customer.parentElement.insertBefore(errorElement, valid_customer);
+            }
+            return;
+        }
+
         // Get form data to send to the backend
         const formData = new FormData(this.creditCardForm);
     
@@ -87,7 +101,7 @@ class StripeCheckoutHandler {
             const clientSecret = await this.createPaymentIntent(formData, csrfToken);
 
             // Validate cardholder name before submission
-            const cardholderName = this.creditCardForm.querySelector('input[name="cardholder_name"]').value.trim();
+            const cardholderName = document.querySelector('input[name="cardholder_name"]').value.trim();
             if (!cardholderName) {
                 this.displayError('Bitte geben Sie den Namen des Karteninhabers ein.');
                 return;

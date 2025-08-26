@@ -28,8 +28,8 @@ class StripeCheckoutHandler {
         if (!this.creditCardForm) {
             return;
         }
-
-        this.stripe = Stripe('pk_test_51RTKpW6d4o9XkCFXTgKjU8BQUQ6pkA8FH5y4BGmgnejBn5hQEHU8JK0g8ikkIjxxwHK3N9xKV7dWLHJDAnQKPgkn00z5BISmCm');
+        
+        this.stripe = Stripe('pk_live_51RTKp9GCoWo6ClVxD1fIaLqXPIxF3YhmrwJEQM1ewrJqBHeQqOwyC74TdPOZq5oFRZHAEPStp0WrKAU6WNhuvgtH00bCnirnKN');
         this.elements = this.stripe.elements();
 
         this.cardNumberElement = this.elements.create('cardNumber', {

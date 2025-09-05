@@ -73,9 +73,15 @@ class StripeCheckoutHandler {
 
     async handleFormSubmit(event) {
         event.preventDefault();
+        
+        // Show spinner and disable button
+        this.showSpinner();
 
         const valid_customer = document.querySelector('#id_valid_customer')
         if (!valid_customer.checked) {
+            // Hide spinner and enable button
+            this.hideSpinner();
+            
             // Display error message for unchecked terms
             const errorElement = document.createElement('div');
             errorElement.className = 'age-error text-danger mb-2';
@@ -103,6 +109,7 @@ class StripeCheckoutHandler {
             // Validate cardholder name before submission
             const cardholderName = document.querySelector('input[name="cardholder_name"]').value.trim();
             if (!cardholderName) {
+                this.hideSpinner();
                 this.displayError('Bitte geben Sie den Namen des Karteninhabers ein.');
                 return;
             }
@@ -113,11 +120,13 @@ class StripeCheckoutHandler {
                 if (paymentResult.success) {
                     await this.createOrder(formDataObj, csrfToken);
                 } else {
+                    this.hideSpinner();
                     this.displayError(paymentResult.error);
                 }
             }
         } catch (error) {
             console.error('Error:', error);
+            this.hideSpinner();
             this.displayError('Ein Fehler ist aufgetreten.');
         }
     }
@@ -182,10 +191,12 @@ class StripeCheckoutHandler {
             } else {
                 const errorData = await response.json();
                 console.error('Order creation failed:', errorData);
+                this.hideSpinner();
                 this.displayError('Bestellerstellung fehlgeschlagen: ' + (errorData.error || 'Unbekannter Fehler'));
             }
         } catch (err) {
             console.error('Error creating order:', err);
+            this.hideSpinner();
             this.displayError('Ein Fehler ist aufgetreten.');
         }
     }
@@ -214,6 +225,30 @@ class StripeCheckoutHandler {
             return customerElement.getAttribute(`data-customer-${field}`);
         }                
         return '';
+    }
+
+    showSpinner() {
+        const payButton = document.getElementById('pay-button');
+        const cartIcon = document.getElementById('cart-icon');
+        const spinner = document.getElementById('loading-spinner');
+        
+        if (payButton && cartIcon && spinner) {
+            payButton.disabled = true;
+            cartIcon.style.display = 'none';
+            spinner.style.display = 'inline-block';
+        }
+    }
+
+    hideSpinner() {
+        const payButton = document.getElementById('pay-button');
+        const cartIcon = document.getElementById('cart-icon');
+        const spinner = document.getElementById('loading-spinner');
+        
+        if (payButton && cartIcon && spinner) {
+            payButton.disabled = false;
+            cartIcon.style.display = 'inline';
+            spinner.style.display = 'none';
+        }
     }
 }
 

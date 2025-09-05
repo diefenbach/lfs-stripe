@@ -27,9 +27,8 @@ def create_payment_intent(request):
         cart = get_cart(request)
 
         # Convert to cents
-        amount = cart.get_price_gross(request) * 100
+        amount = cart.get_total_price_gross(request) * 100
 
-        # Create payment intent
         intent = stripe.PaymentIntent.create(
             amount=int(amount),
             currency="eur",

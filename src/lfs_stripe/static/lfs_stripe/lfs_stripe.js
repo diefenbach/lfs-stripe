@@ -194,6 +194,17 @@ class StripeCheckoutHandler {
         const displayError = document.getElementById('card-errors');
         if (displayError) {
             displayError.textContent = message;
+            
+            // Scroll to card form when error occurs
+            if (message) {
+                const creditCardSection = document.getElementById('payment-method-title');
+                if (creditCardSection) {
+                    creditCardSection.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }
+            }
         }
     }
 

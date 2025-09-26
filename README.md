@@ -66,3 +66,9 @@ While both lfs-stripe and lfs-paypal provide payment integration for LFS, there 
 4. **User Experience**:
    - Stripe allows customers to stay on your site throughout the checkout process
 
+## Notes: 
+- create payment intent muss immer im BE aufgerufen werden. Das verlangt Stripe zur Sicherheit, weil so keine Daten im Browser manipuliert werden können. Außerdem liegt nur dort der private key.
+- Im BE wird also intent = stripe.PaymentIntent.create(...) aufgerufen mit dem Betrag und dem private key
+- Das gibt wiederum ein client secret zurück
+- Mit diesem client secrect wird this.stripe.confirmCardPayment(clientSecret, {...}) aufgerufen
+- Wenn das erfolgreich ist 

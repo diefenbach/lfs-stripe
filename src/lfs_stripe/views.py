@@ -44,7 +44,6 @@ def create_payment_intent(request):
 
 def create_order(request):
     cart = get_cart(request)
-    logger.info(f"Creating order for payment {cart.id}")
     order = add_order(request)
     logger.info(f"Order created: {order.id}")
     order.state = PAID

@@ -118,6 +118,8 @@ class StripeCheckoutHandler {
                 const paymentResult = await this.confirmPayment(clientSecret);
                 
                 if (paymentResult.success) {
+                    // Add payment intent ID to form data
+                    formDataObj.payment_intent_id = paymentResult.paymentIntentId;
                     await this.createOrder(formDataObj, csrfToken);
                 } else {
                     this.hideSpinner();
@@ -160,7 +162,7 @@ class StripeCheckoutHandler {
         const customerFirstName = this.getCustomerData('first_name');
         const customerLastName = this.getCustomerData('last_name');
         
-        const {error} = await this.stripe.confirmCardPayment(clientSecret, {
+        const {error, paymentIntent} = await this.stripe.confirmCardPayment(clientSecret, {
             payment_method: {
                 card: this.cardNumberElement,
                 billing_details: {
@@ -171,7 +173,8 @@ class StripeCheckoutHandler {
                                                     
         return {
             success: !error,
-            error: error ? error.message : null
+            error: error ? error.message : null,
+            paymentIntentId: paymentIntent ? paymentIntent.id : null
         };
     }
 

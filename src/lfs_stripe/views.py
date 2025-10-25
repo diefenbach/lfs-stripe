@@ -33,7 +33,7 @@ def create_payment_intent(request):
             amount=int(amount),
             currency="eur",
             payment_method_types=["card"],
-            metadata={"cart_id": cart.id, "user_id": request.user.id if request.user.is_authenticated else None},
+            metadata={"cart_id": f"{settings.STRIPE_SHOP_NAME}, {cart.id}", "user_id": request.user.id if request.user.is_authenticated else None},
         )
 
         return JsonResponse({"clientSecret": intent.client_secret})
@@ -48,6 +48,19 @@ def create_order(request):
     logger.info(f"Order created: {order.id}")
     order.state = PAID
     order.save()
+
+    # Update Stripe PaymentIntent with order ID
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    payment_intent_id = request.POST.get('payment_intent_id')
+    if payment_intent_id:
+        try:
+            stripe.PaymentIntent.modify(
+                payment_intent_id,
+                metadata={'order_id': f"{settings.STRIPE_SHOP_NAME}, {order.id}"}
+            )
+            logger.info(f"Updated PaymentIntent {payment_intent_id} with order_id: {order.id}")
+        except Exception as e:
+            logger.error(f"Failed to update PaymentIntent metadata: {e}")
 
     # Notify the system
     order_submitted.send(sender=order, request=request)

@@ -11,7 +11,7 @@ from lfs.core.signals import order_paid, order_submitted
 from lfs.order.settings import PAID
 from lfs.order.utils import add_order
 
-logger = logging.getLogger("lfs.paypal")
+logger = logging.getLogger("lfs.stripe")
 
 
 def create_payment_intent(request):
@@ -33,7 +33,7 @@ def create_payment_intent(request):
             amount=int(amount),
             currency="eur",
             payment_method_types=["card"],
-            metadata={"cart_id": f"{settings.STRIPE_SHOP_NAME}, {cart.id}", "user_id": request.user.id if request.user.is_authenticated else None},
+            metadata={"cart_id": f"{settings.STRIPE_SHOP_NAME}, {cart.id}"},
         )
 
         return JsonResponse({"clientSecret": intent.client_secret})
@@ -56,7 +56,7 @@ def create_order(request):
         try:
             stripe.PaymentIntent.modify(
                 payment_intent_id,
-                metadata={'order_id': f"{settings.STRIPE_SHOP_NAME}, {order.id}"}
+                metadata={'order_number': f"{settings.STRIPE_SHOP_NAME}, {order.number}"}
             )
             logger.info(f"Updated PaymentIntent {payment_intent_id} with order_id: {order.id}")
         except Exception as e:

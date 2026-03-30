@@ -51,12 +51,11 @@ def create_order(request):
 
     # Update Stripe PaymentIntent with order ID
     stripe.api_key = settings.STRIPE_SECRET_KEY
-    payment_intent_id = request.POST.get('payment_intent_id')
+    payment_intent_id = request.POST.get("payment_intent_id")
     if payment_intent_id:
         try:
             stripe.PaymentIntent.modify(
-                payment_intent_id,
-                metadata={'order_number': f"{settings.STRIPE_SHOP_NAME}, {order.number}"}
+                payment_intent_id, metadata={"order_number": f"{settings.STRIPE_SHOP_NAME}, {order.number}"}
             )
             logger.info(f"Updated PaymentIntent {payment_intent_id} with order_id: {order.id}")
         except Exception as e:

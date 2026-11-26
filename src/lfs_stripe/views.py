@@ -14,6 +14,11 @@ from lfs.order.utils import add_order
 logger = logging.getLogger("lfs.stripe")
 
 
+def config(request):
+    """Return the shop's Stripe publishable key, which the checkout JavaScript needs to start Stripe."""
+    return JsonResponse({"publishableKey": settings.STRIPE_PUBLISHABLE_KEY})
+
+
 def create_payment_intent(request):
     cart = lfs.cart.utils.get_cart(request)
     if cart is None:

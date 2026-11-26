@@ -10,7 +10,7 @@ class StripeCheckoutHandler {
         this.initialize();
     }
 
-    initialize() {
+    async initialize() {
         const style = {
             base: {
               fontSize: '16px',
@@ -29,7 +29,10 @@ class StripeCheckoutHandler {
             return;
         }
         
-        this.stripe = Stripe('pk_live_51RTKp9GCoWo6ClVxD1fIaLqXPIxF3YhmrwJEQM1ewrJqBHeQqOwyC74TdPOZq5oFRZHAEPStp0WrKAU6WNhuvgtH00bCnirnKN');
+        // The publishable key comes from the shop's STRIPE_PUBLISHABLE_KEY setting.
+        const response = await fetch('/stripe/config/');
+        const config = await response.json();
+        this.stripe = Stripe(config.publishableKey);
         this.elements = this.stripe.elements();
 
         this.cardNumberElement = this.elements.create('cardNumber', {

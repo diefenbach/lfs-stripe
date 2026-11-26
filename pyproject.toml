@@ -1,17 +1,27 @@
 [project]
 name = "lfs-stripe"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "Stripe payments for LFS"
 readme = "README.md"
-authors = [
-    { name = "Kai Diefenbach", email = "kai.diefenbach@iqpp.de" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
+authors = [{ name = "Kai Diefenbach" }]
+requires-python = ">=3.12"
+classifiers = [
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 5.2",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
 ]
-requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "django-lfs>=1.0,<2",
+    "stripe>=15.6,<16",
+]
 
-[project.scripts]
-lfs-stripe = "lfs_stripe:main"
+[project.urls]
+Source = "https://github.com/diefenbach/lfs-stripe"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"

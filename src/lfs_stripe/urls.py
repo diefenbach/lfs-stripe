@@ -4,6 +4,7 @@ from . import views
 app_name = "lfs-stripe"
 
 urlpatterns = [
+    path("config/", views.config, name="config"),
     path("create-payment-intent/", views.create_payment_intent, name="create_payment_intent"),
     path("create-order/", views.create_order, name="create_order"),
 ]

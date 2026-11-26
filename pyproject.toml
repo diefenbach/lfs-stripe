@@ -3,6 +3,8 @@ name = "lfs-stripe"
 version = "1.0.0"
 description = "Stripe payments for LFS"
 readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
 authors = [{ name = "Kai Diefenbach" }]
 requires-python = ">=3.12"
 classifiers = [

@@ -29,11 +29,13 @@ This package provides Stripe payment integration for LFS e-commerce platform. It
    ]
    ```
 
-3. Configure your Stripe API keys in settings.py:
+3. Configure Stripe in settings.py (best read from environment variables):
    ```python
-   STRIPE_SECRET_KEY = 'your_stripe_secret_key'
-   STRIPE_PUBLISHABLE_KEY = 'your_stripe_publishable_key'
+   STRIPE_SECRET_KEY = os.environ["STRIPE_SECRET_KEY"]            # sk_..., stays on the server
+   STRIPE_PUBLISHABLE_KEY = os.environ["STRIPE_PUBLISHABLE_KEY"]  # pk_..., sent to the browser
+   STRIPE_SHOP_NAME = "My shop"  # prefix of the cart and order references shown in Stripe
    ```
+   Both keys must belong to the same Stripe account.
 
 4. Include the URLs in your project's urls.py:
    ```python
@@ -44,11 +46,19 @@ This package provides Stripe payment integration for LFS e-commerce platform. It
    ]
    ```
 
-## Request Flow 
-1. fetch to backend to: /stripe/create-payment-intent/ 
-2. API Call to stripe to: confirmCardPayment
-3. fetch to backend to: /stripe/create-order
-4. Redirect to thank-you page
+## Request flow
+
+The URLs must be included under `stripe/`, because the checkout script calls these paths.
+
+1. The checkout script fetches the publishable key from `/stripe/config/` and starts Stripe Elements.
+2. On payment it calls `/stripe/create-payment-intent/`. The server creates a PaymentIntent for the cart total with
+   the secret key and returns its client secret.
+3. The browser confirms the payment with Stripe (`confirmCardPayment`) using the client secret.
+4. On success it calls `/stripe/create-order/`, which creates the order and adds its number to the PaymentIntent.
+5. The browser goes to the thank-you page.
+
+Payments are in EUR (fixed in `create_payment_intent`). The PaymentIntent is always created on the server: only there is the secret key, and the amount comes from the cart,
+so it cannot be changed in the browser.
 
 ## Differences from LFS-PayPal
 
@@ -65,10 +75,3 @@ While both lfs-stripe and lfs-paypal provide payment integration for LFS, there 
 
 4. **User Experience**:
    - Stripe allows customers to stay on your site throughout the checkout process
-
-## Notes: 
-- create payment intent muss immer im BE aufgerufen werden. Das verlangt Stripe zur Sicherheit, weil so keine Daten im Browser manipuliert werden können. Außerdem liegt nur dort der private key.
-- Im BE wird also intent = stripe.PaymentIntent.create(...) aufgerufen mit dem Betrag und dem private key
-- Das gibt wiederum ein client secret zurück
-- Mit diesem client secrect wird this.stripe.confirmCardPayment(clientSecret, {...}) aufgerufen
-- Wenn das erfolgreich ist 

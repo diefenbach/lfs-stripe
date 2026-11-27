@@ -1,6 +1,6 @@
 [project]
 name = "lfs-stripe"
-version = "1.0.1"
+version = "1.0.2"
 description = "Stripe payments for LFS"
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -25,3 +25,7 @@ Source = "https://github.com/diefenbach/lfs-stripe"
 [build-system]
 requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
+
+# Allowlist, because hatchling ignores the global ~/.gitignore that keeps recaps/, todos/ etc. out of git.
+[tool.hatch.build.targets.sdist]
+only-include = ["src", "tests"]

@@ -111,10 +111,52 @@ def test_intent_that_already_paid_an_order_creates_no_second_one(cart_client, mo
 
 
 @override_settings(STRIPE_SHOP_NAME=SHOP, STRIPE_SECRET_KEY="sk_test")
-def test_unknown_intent_creates_no_order(cart_client, mocker):
+def test_unknown_intent_creates_no_order(cart_client, mocker, caplog):
     mocker.patch("stripe.PaymentIntent.retrieve", side_effect=stripe.InvalidRequestError("No such payment_intent", "id"))
 
     response = cart_client.post(reverse("lfs-stripe:create_order"), {"payment_intent_id": "pi_forged"})
 
     assert response.status_code == 400
     assert not Order.objects.exists()
+    assert {r.levelname for r in caplog.records if r.name == "lfs.stripe"} == {"WARNING"}
+
+
+def levels(caplog) -> set[str]:
+    """Return the levels logged by lfs-stripe."""
+    return {record.levelname for record in caplog.records if record.name == "lfs.stripe"}
+
+
+@override_settings(STRIPE_SHOP_NAME=SHOP, STRIPE_SECRET_KEY="sk_test")
+@pytest.mark.parametrize(
+    "answer",
+    [
+        pytest.param({"amount": 100}, id="smaller amount"),
+        pytest.param({"currency": "usd"}, id="other currency"),
+        pytest.param({"order_number": f"{SHOP}, 1001"}, id="already used"),
+    ],
+)
+def test_paid_intent_that_does_not_fit_is_logged_as_error(cart_client, mocker, caplog, answer):
+    """Stripe took the money but there is no order: the shop must hear of it (Sentry reports errors)."""
+    create_order(cart_client, mocker, intent(**answer))
+
+    assert "ERROR" in levels(caplog)
+
+
+@override_settings(STRIPE_SHOP_NAME=SHOP, STRIPE_SECRET_KEY="sk_test")
+def test_stripe_not_answering_is_logged_as_error(cart_client, mocker, caplog):
+    mocker.patch("stripe.PaymentIntent.retrieve", side_effect=stripe.APIConnectionError("Stripe unreachable"))
+
+    response = cart_client.post(reverse("lfs-stripe:create_order"), {"payment_intent_id": "pi_test"})
+
+    assert response.status_code == 400
+    assert not Order.objects.exists()
+    assert "ERROR" in levels(caplog)
+
+
+@override_settings(STRIPE_SHOP_NAME=SHOP, STRIPE_SECRET_KEY="sk_test")
+@pytest.mark.parametrize("payment_intent_id", [None, "pi_test"], ids=["no intent", "unpaid intent"])
+def test_call_without_a_payment_is_only_a_warning(cart_client, mocker, caplog, payment_intent_id):
+    """Nobody was charged, so no alarm: a forged call must not wake anybody up."""
+    create_order(cart_client, mocker, intent(status="requires_payment_method"), payment_intent_id=payment_intent_id)
+
+    assert levels(caplog) == {"WARNING"}

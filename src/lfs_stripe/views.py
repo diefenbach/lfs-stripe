@@ -58,24 +58,34 @@ def payment_problem(request: HttpRequest, cart: Cart, payment_intent_id: str) ->
     """Return why the PaymentIntent ``payment_intent_id`` does not pay ``cart``, or None if it does.
 
     Asks Stripe: the PaymentIntent must have succeeded, for the cart's total in euros, be the one created for this
-    cart, and not have paid an order yet.
+    cart, and not have paid an order yet. Logs an error (which Sentry reports) when the customer may have been charged
+    without getting an order: Stripe did not answer, or a succeeded PaymentIntent does not fit the cart. An unknown or
+    unpaid PaymentIntent charged nobody; the caller logs it as a warning.
     """
     try:
         intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-    except stripe.StripeError:
-        logger.exception("Retrieving PaymentIntent %s failed", payment_intent_id)
+    except stripe.InvalidRequestError:
         return "unknown payment"
+    except stripe.StripeError:
+        logger.exception("Stripe did not confirm PaymentIntent %s of cart %s; no order created", payment_intent_id, cart.id)
+        return "Stripe did not answer"
 
-    metadata = intent.metadata.to_dict() if intent.metadata else {}
     if intent.status != "succeeded":
         return f"status {intent.status}"
+
+    metadata = intent.metadata.to_dict() if intent.metadata else {}
+    problem = None
     if intent.amount != amount_in_cents(request, cart) or intent.currency != CURRENCY:
-        return f"amount {intent.amount} {intent.currency} does not match the cart"
-    if metadata.get("cart_id") != cart_reference(cart):
-        return f"made for {metadata.get('cart_id')!r}"
-    if metadata.get("order_number"):
-        return f"already paid order {metadata['order_number']!r}"
-    return None
+        problem = f"amount {intent.amount} {intent.currency} does not match the cart"
+    elif metadata.get("cart_id") != cart_reference(cart):
+        problem = f"made for {metadata.get('cart_id')!r}"
+    elif metadata.get("order_number"):
+        problem = f"already paid order {metadata['order_number']!r}"
+    if problem:
+        logger.error(
+            "PaymentIntent %s succeeded but no order was created for cart %s: %s", payment_intent_id, cart.id, problem
+        )
+    return problem
 
 
 def create_order(request: HttpRequest) -> JsonResponse:

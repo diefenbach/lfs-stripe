@@ -32,7 +32,8 @@ class StripeCheckoutHandler {
         // The publishable key comes from the shop's STRIPE_PUBLISHABLE_KEY setting.
         const response = await fetch('/stripe/config/');
         const config = await response.json();
-        this.stripe = Stripe(config.publishableKey);
+        // German like the rest of the checkout, also Stripe's own messages ("Ihre Karte wurde abgelehnt.").
+        this.stripe = Stripe(config.publishableKey, {locale: 'de'});
         this.elements = this.stripe.elements();
 
         this.cardNumberElement = this.elements.create('cardNumber', {

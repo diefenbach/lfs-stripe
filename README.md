@@ -54,11 +54,22 @@ The URLs must be included under `stripe/`, because the checkout script calls the
 2. On payment it calls `/stripe/create-payment-intent/`. The server creates a PaymentIntent for the cart total with
    the secret key and returns its client secret.
 3. The browser confirms the payment with Stripe (`confirmCardPayment`) using the client secret.
-4. On success it calls `/stripe/create-order/`, which creates the order and adds its number to the PaymentIntent.
+4. On success it calls `/stripe/create-order/` with the PaymentIntent's id. The server retrieves the PaymentIntent
+   from Stripe and creates the paid order only if it succeeded for the cart's total and was made for this cart;
+   then it adds the order number to the PaymentIntent. Otherwise it answers 400 and logs the reason.
 5. The browser goes to the thank-you page.
 
 Payments are in EUR (fixed in `create_payment_intent`). The PaymentIntent is always created on the server: only there is the secret key, and the amount comes from the cart,
 so it cannot be changed in the browser.
+
+## Tests
+
+The tests run with a shop's settings, e.g. from lfs-dev: `bin/test` there, or in this folder
+`PYTHONPATH=<lfs-dev> DJANGO_SETTINGS_MODULE=project.settings <lfs-dev>/.venv/bin/python -m pytest`.
+
+`tests/test_stripe_sandbox.py` pays with Stripe's test cards against Stripe itself (accepted, declined, insufficient
+funds, expired, 3-D Secure not completed, not confirmed, made-up payment). It runs only when
+`STRIPE_TEST_SECRET_KEY` holds a test secret key (`sk_test_…` of a sandbox or test mode) and is skipped otherwise.
 
 ## Differences from LFS-PayPal
 

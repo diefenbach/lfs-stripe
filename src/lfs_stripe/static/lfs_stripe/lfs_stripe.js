@@ -32,7 +32,8 @@ class StripeCheckoutHandler {
         // The publishable key comes from the shop's STRIPE_PUBLISHABLE_KEY setting.
         const response = await fetch('/stripe/config/');
         const config = await response.json();
-        this.stripe = Stripe(config.publishableKey);
+        // German like the rest of the checkout, also Stripe's own messages ("Ihre Karte wurde abgelehnt.").
+        this.stripe = Stripe(config.publishableKey, {locale: 'de'});
         this.elements = this.stripe.elements();
 
         this.cardNumberElement = this.elements.create('cardNumber', {
@@ -195,16 +196,27 @@ class StripeCheckoutHandler {
             if (response.ok) {
                 window.location.href = '/thank-you/';
             } else {
-                const errorData = await response.json();
-                console.error('Order creation failed:', errorData);
-                this.hideSpinner();
-                this.displayError('Bestellerstellung fehlgeschlagen: ' + (errorData.error || 'Unbekannter Fehler'));
+                console.error('Order creation failed:', await response.text());
+                this.paymentNotConfirmed();
             }
         } catch (err) {
             console.error('Error creating order:', err);
-            this.hideSpinner();
-            this.displayError('Ein Fehler ist aufgetreten.');
+            this.paymentNotConfirmed();
         }
+    }
+
+    // Stripe has confirmed the payment in the browser, but the shop could not create the order. The card may have been
+    // charged, so the pay button stays disabled: paying again could charge the card twice.
+    paymentNotConfirmed() {
+        this.hideSpinner();
+        const payButton = document.getElementById('pay-button');
+        if (payButton) {
+            payButton.disabled = true;
+        }
+        this.displayError(
+            'Ihre Zahlung konnte nicht bestätigt werden. Falls Ihre Karte belastet wurde, melden Sie sich bitte bei uns, ' +
+            'wir klären das umgehend. Bitte zahlen Sie nicht erneut.'
+        );
     }
 
     displayError(message) {

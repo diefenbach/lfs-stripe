@@ -62,6 +62,15 @@ The URLs must be included under `stripe/`, because the checkout script calls the
 Payments are in EUR (fixed in `create_payment_intent`). The PaymentIntent is always created on the server: only there is the secret key, and the amount comes from the cart,
 so it cannot be changed in the browser.
 
+## Tests
+
+The tests run with a shop's settings, e.g. from lfs-dev: `bin/test` there, or in this folder
+`PYTHONPATH=<lfs-dev> DJANGO_SETTINGS_MODULE=project.settings <lfs-dev>/.venv/bin/python -m pytest`.
+
+`tests/test_stripe_sandbox.py` pays with Stripe's test cards against Stripe itself (accepted, declined, insufficient
+funds, expired, 3-D Secure not completed, not confirmed, made-up payment). It runs only when
+`STRIPE_TEST_SECRET_KEY` holds a test secret key (`sk_test_…` of a sandbox or test mode) and is skipped otherwise.
+
 ## Differences from LFS-PayPal
 
 While both lfs-stripe and lfs-paypal provide payment integration for LFS, there are several key differences:
